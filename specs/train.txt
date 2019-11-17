@@ -1,0 +1,229 @@
+model_config {
+  pretrained_model_file: "/data/tlt_working_dir/tlt_resnet50_detectnet_v2_v1/resnet50.hdf5"
+  num_layers: 50
+  use_batch_norm: true
+  activation {
+    activation_type: "relu"
+  }
+  dropout_rate: 0.1
+  objective_set {
+    bbox {
+      scale: 35.0
+      offset: 0.5
+    }
+    cov {
+    }
+  }
+  training_precision {
+    backend_floatx: FLOAT32
+  }
+  arch: "resnet"
+}
+
+bbox_rasterizer_config {
+  target_class_config {
+    key: "vehicle"
+    value {
+      cov_center_x: 0.5
+      cov_center_y: 0.5
+      cov_radius_x: 0.4
+      cov_radius_y: 0.4
+      bbox_min_radius: 1.0
+    }
+  }
+  target_class_config {
+    key: "person"
+    value {
+      cov_center_x: 0.5
+      cov_center_y: 0.5
+      cov_radius_x: 1.0
+      cov_radius_y: 1.0
+      bbox_min_radius: 1.0
+    }
+  }
+
+  deadzone_radius: 0.67
+}
+
+postprocessing_config {
+  target_class_config {
+    key: "vehicle"
+    value {
+      clustering_config {
+        coverage_threshold: 0.005
+        dbscan_eps: 0.15
+        dbscan_min_samples: 0.05
+        minimum_bounding_box_height: 20
+      }
+    }
+  }
+  target_class_config {
+    key: "person"
+    value {
+      clustering_config {
+        coverage_threshold: 0.005
+        dbscan_eps: 0.15
+        dbscan_min_samples: 0.05
+        minimum_bounding_box_height: 20
+      }
+    }
+  }
+}
+cost_function_config {
+  target_classes {
+    name: "vehicle"
+    class_weight: 1.0
+    coverage_foreground_weight: 0.05
+    objectives {
+      name: "cov"
+      initial_weight: 1.0
+      weight_target: 1.0
+    }
+    objectives {
+      name: "bbox"
+      initial_weight: 10.0
+      weight_target: 10.0
+    }
+  }
+  target_classes {
+    name: "person"
+    class_weight: 1.0
+    coverage_foreground_weight: 0.05
+    objectives {
+      name: "cov"
+      initial_weight: 1.0
+      weight_target: 1.0
+    }
+    objectives {
+      name: "bbox"
+      initial_weight: 10.0
+      weight_target: 10.0
+    }
+  }
+  enable_autoweighting: true
+  max_objective_weight: 0.9999
+  min_objective_weight: 0.0001
+}
+
+training_config {
+  batch_size_per_gpu: 16
+  num_epochs: 120
+  learning_rate {
+    soft_start_annealing_schedule {
+      min_learning_rate: 5e-6
+      max_learning_rate: 5e-4
+      soft_start: 0.1
+      annealing: 0.7
+    }
+  }
+  regularizer {
+    type: L1
+    weight: 3e-9
+  }
+  optimizer {
+    adam {
+      epsilon: 1e-08
+      beta1: 0.9
+      beta2: 0.999
+    }
+  }
+  cost_scaling {
+    enabled: False
+    initial_exponent: 20.0
+    increment: 0.005
+    decrement: 1.0
+  }
+  checkpoint_interval: 5
+}
+
+augmentation_config {
+  preprocessing {
+    output_image_width: 768
+    output_image_height: 768
+    min_bbox_width: 2.0
+    min_bbox_height: 2.0
+    output_image_channel: 3
+  }
+  spatial_augmentation {
+    hflip_probability: 0.5
+    vflip_probability: 0.5
+    zoom_min: 1.0
+    zoom_max: 1.0
+    translate_max_x: 8.0
+    translate_max_y: 8.0
+  }
+  color_augmentation {
+    hue_rotation_max: 25.0
+    saturation_shift_max: 0.2
+    contrast_scale_max: 0.1
+    contrast_center: 0.5
+  }
+}
+
+
+evaluation_config {
+  validation_period_during_training: 5
+  first_validation_epoch: 45
+  minimum_detection_ground_truth_overlap {
+    key: "vehicle"
+    value: 0.5
+  }
+  minimum_detection_ground_truth_overlap {
+    key: "person"
+    value: 0.5
+  }
+
+
+  evaluation_box_config {
+    key: "vehicle"
+    value {
+      minimum_height: 4
+      maximum_height: 9999
+      minimum_width: 4
+      maximum_width: 9999
+    }
+  }
+  evaluation_box_config {
+    key: "person"
+    value {
+      minimum_height: 4
+      maximum_height: 9999
+      minimum_width: 4
+      maximum_width: 9999
+    }
+  }
+  average_precision_mode: INTEGRATE
+}
+
+dataset_config {
+  data_sources {
+    tfrecords_path: "/data/tlt/tfrecords/kitti2*"
+    image_directory_path: "/data/stanford/kitti2"
+  }
+  image_extension: "jpg"
+  target_class_mapping {
+    key: "bus"
+    value: "vehicle"
+  }
+  target_class_mapping {
+    key: "cart"
+    value: "vehicle"
+  }
+  target_class_mapping {
+    key: "pedestrian"
+    value: "person"
+  }
+  target_class_mapping {
+    key: "biker"
+    value: "person"
+  }
+  target_class_mapping {
+    key: "skater"
+    value: "person"
+  }
+  target_class_mapping {
+    key: "car"
+    value: "vehicle"
+  }
+  validation_fold: 0
+}

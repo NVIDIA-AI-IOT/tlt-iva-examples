@@ -1,0 +1,40 @@
+{
+    "dbscan_criterion": "IOU",
+    "dbscan_eps": {
+        "vehicle": 0.2,
+        "person": 0.2
+    },
+    "dbscan_min_samples": {
+        "vehicle": 0.05,
+        "person": 0.05
+    },
+    "min_cov_to_cluster": {
+        "vehicle": 0.075,
+        "person": 0.005
+    },
+    "min_obj_height": {
+        "vehicle": 2,
+        "person": 2
+    },
+    "target_classes": ["vehicle", "person"],
+    "confidence_th": {
+        "vehicle": 0.5,
+        "person": 0.5
+    },
+    "confidence_model": {
+        "vehicle": { "kind": "aggregate_cov"},
+        "person": { "kind": "aggregate_cov"}
+    },
+    "output_map": {
+        "vehicle" : "vehicle",
+        "person" : "person"
+    },
+    "color": {
+        "vehicle": "green",
+        "person": "magenta"
+    },
+    "postproc_classes": ["vehicle", "person"],
+    "image_height": 768,
+    "image_width": 768,
+    "stride": 16
+}
